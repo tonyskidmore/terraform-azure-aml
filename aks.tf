@@ -11,12 +11,13 @@ resource "azurerm_kubernetes_cluster" "aml_aks" {
   location            = azurerm_resource_group.aml_rg.location
   resource_group_name = azurerm_resource_group.aml_rg.name
   dns_prefix          = "aks"
+  private_cluster_enabled = true
 
   default_node_pool {
     name           = "default"
-    node_count     = 3
-    vm_size        = "Standard_DS2_v2"
-    vnet_subnet_id = azurerm_subnet.aks_subnet[count.index].id
+    node_count     = 1
+    vm_size        =  "Standard_B2ms" # "Standard_DS2_v2"
+    vnet_subnet_id = azurerm_subnet.aks_subnet.id
   }
 
   identity {
@@ -25,14 +26,15 @@ resource "azurerm_kubernetes_cluster" "aml_aks" {
 
   network_profile {
     network_plugin     = "azure"
+    # load_balancer_sku = "standard"
     dns_service_ip     = "10.0.3.10"
     service_cidr       = "10.0.3.0/24"
     docker_bridge_cidr = "172.17.0.1/16"
   }
 
-  provisioner "local-exec" {
-    command = "az ml computetarget attach aks -n ${azurerm_kubernetes_cluster.aml_aks[count.index].name} -i ${azurerm_kubernetes_cluster.aml_aks[count.index].id} -g ${var.resource_group} -w ${azurerm_machine_learning_workspace.aml_ws.name}"
-  }
+  # provisioner "local-exec" {
+  #   command = "az ml computetarget attach aks -n ${azurerm_kubernetes_cluster.aml_aks[count.index].name} -i ${azurerm_kubernetes_cluster.aml_aks[count.index].id} -g ${var.resource_group} -w ${azurerm_machine_learning_workspace.aml_ws.name}"
+  # }
 
-  depends_on = [azurerm_machine_learning_workspace.aml_ws]
+  # depends_on = [azurerm_machine_learning_workspace.aml_ws]
 }
