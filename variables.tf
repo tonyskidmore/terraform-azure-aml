@@ -47,7 +47,7 @@ variable "location" {
 }
 
 variable "deploy_aks" {
-  default = true
+  default = false
 }
 
 variable "jumphost_username" {
