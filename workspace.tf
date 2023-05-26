@@ -15,11 +15,19 @@ resource "azurerm_machine_learning_workspace" "aml_ws" {
   storage_account_id                           = azurerm_storage_account.aml_sa.id
   container_registry_id                        = azurerm_container_registry.aml_acr.id
   public_network_access_enabled                = true
-  v1_legacy_mode_enabled                       = true
+  v1_legacy_mode_enabled                       = false
+  image_build_compute_name                     = null
 
   identity {
     type = "SystemAssigned"
   }
+}
+
+resource "azurerm_machine_learning_datastore_blobstorage" "aml_train_data" {
+  name                 = "modeltrainingdata"
+  workspace_id         = azurerm_machine_learning_workspace.aml_ws.id
+  storage_container_id = azurerm_storage_container.model_training_data.resource_manager_id
+  account_key          = azurerm_storage_account.aml_train_data.primary_access_key
 }
 
 # Create Compute Resources in AML
@@ -86,4 +94,23 @@ resource "azurerm_private_endpoint" "ws_pe" {
 
   # Add Private Link after we configured the workspace and attached AKS
   # depends_on = [null_resource.compute_resouces, azurerm_kubernetes_cluster.aml_aks]
+}
+
+resource "azurerm_machine_learning_compute_cluster" "cpu_cluster" {
+  name                          = "cpu-cluster"
+  location                      = azurerm_resource_group.aml_rg.location
+  vm_priority                   = "LowPriority"
+  vm_size                       = "STANDARD_DS11_V2"
+  machine_learning_workspace_id = azurerm_machine_learning_workspace.aml_ws.id
+  subnet_resource_id            = azurerm_subnet.aml_subnet.id
+
+  scale_settings {
+    min_node_count                       = 0
+    max_node_count                       = 1
+    scale_down_nodes_after_idle_duration = "PT30S" # 30 seconds
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
 }
