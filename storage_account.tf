@@ -25,7 +25,7 @@ resource "azurerm_storage_management_policy" "lifecycle" {
   storage_account_id = azurerm_storage_account.aml_train_data.id
 
   rule {
-    name    = "rule1"
+    name    = "MoveToCool"
     enabled = true
     filters {
       # prefix_match = ["container1/prefix1"]
@@ -37,10 +37,32 @@ resource "azurerm_storage_management_policy" "lifecycle" {
       # }
     }
     actions {
-      version {
-        change_tier_to_cool_after_days_since_creation    = 1
-        change_tier_to_archive_after_days_since_creation = 2
-        delete_after_days_since_creation                 = 3
+      base_blob {
+        tier_to_cool_after_days_since_creation_greater_than = 1
+      }
+    }
+  }
+  rule {
+    name    = "MoveToArchive"
+    enabled = true
+    filters {
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        tier_to_archive_after_days_since_creation_greater_than = 5
+      }
+    }
+  }
+  rule {
+    name    = "Delete"
+    enabled = true
+    filters {
+      blob_types   = ["blockBlob"]
+    }
+    actions {
+      base_blob {
+        delete_after_days_since_creation_greater_than = 6
       }
     }
   }

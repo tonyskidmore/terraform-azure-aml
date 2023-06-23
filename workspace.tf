@@ -16,7 +16,7 @@ resource "azurerm_machine_learning_workspace" "aml_ws" {
   container_registry_id                        = azurerm_container_registry.aml_acr.id
   public_network_access_enabled                = true
   v1_legacy_mode_enabled                       = false
-  image_build_compute_name                     = null
+  image_build_compute_name                     = "cpu-cluster"
 
   identity {
     type = "SystemAssigned"
