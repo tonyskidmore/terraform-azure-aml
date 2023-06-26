@@ -9,6 +9,7 @@ resource "azurerm_public_ip" "bastion_ip" {
   resource_group_name = azurerm_resource_group.aml_rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
+  tunneling_enabled   = true
 }
 
 resource "azurerm_bastion_host" "jumphost_bastion" {

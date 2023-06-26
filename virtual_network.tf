@@ -39,9 +39,9 @@ resource "azurerm_subnet" "aks_subnet" {
   private_endpoint_network_policies_enabled = true
 }
 
-# resource "azurerm_subnet" "bastion_subnet" {
-#   name                 = "AzureBastionSubnet"
-#   resource_group_name  = azurerm_resource_group.aml_rg.name
-#   virtual_network_name = azurerm_virtual_network.aml_vnet.name
-#   address_prefixes     = ["10.0.10.0/27"]
-# }
+resource "azurerm_subnet" "bastion_subnet" {
+  name                 = "AzureBastionSubnet"
+  resource_group_name  = azurerm_resource_group.aml_rg.name
+  virtual_network_name = azurerm_virtual_network.aml_vnet.name
+  address_prefixes     = ["10.0.10.0/27"]
+}

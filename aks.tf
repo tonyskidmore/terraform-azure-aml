@@ -11,12 +11,12 @@ resource "azurerm_kubernetes_cluster" "aml_aks" {
   location            = azurerm_resource_group.aml_rg.location
   resource_group_name = azurerm_resource_group.aml_rg.name
   dns_prefix          = "aks"
-  private_cluster_enabled = true
+  # private_cluster_enabled = true
 
   default_node_pool {
     name           = "default"
     node_count     = 1
-    vm_size        =  "Standard_B2ms" # "Standard_DS2_v2"
+    vm_size        = "Standard_DS2_v2" # "Standard_B2ms" 
     vnet_subnet_id = azurerm_subnet.aks_subnet.id
   }
 

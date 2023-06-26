@@ -35,7 +35,7 @@ variable "rdp_windows_height" {
 
 
 variable "resource_group" {
-  default = "aml-terraform-demo"
+  default = "rg-aml-terraform-demo"
 }
 
 variable "workspace_display_name" {

@@ -5,18 +5,6 @@
 
 # Jump host for testing VNET and Private Link
 
-resource "azurerm_public_ip" "pip" {
-  count               = var.create_public_access ? (var.win_vm_deploy == 0 ? 0 : 1) : 0
-  name                = "vm-pip-${count.index}"
-  location            = azurerm_resource_group.aml_rg.location
-  resource_group_name = azurerm_resource_group.aml_rg.name
-  allocation_method   = "Static"
-}
-
-data "http" "ifconfig" {
-  url = "https://ifconfig.me/ip"
-}
-
 resource "azurerm_network_interface" "jumphost_nic" {
   name                = "jumphost-nic"
   location            = azurerm_resource_group.aml_rg.location
@@ -26,7 +14,7 @@ resource "azurerm_network_interface" "jumphost_nic" {
     name                          = "configuration"
     private_ip_address_allocation = "Dynamic"
     subnet_id                     = azurerm_subnet.aml_subnet.id
-    public_ip_address_id          = var.create_public_access ? element(azurerm_public_ip.pip.*.id, 1) : null
+    # public_ip_address_id          = azurerm_public_ip.jumphost_public_ip.id
   }
 }
 
@@ -43,7 +31,7 @@ resource "azurerm_network_security_group" "jumphost_nsg" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = 3389
-    source_address_prefix      = local.rdp_source_address_prefix
+    source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
 }
@@ -53,35 +41,48 @@ resource "azurerm_network_interface_security_group_association" "jumphost_nsg_as
   network_security_group_id = azurerm_network_security_group.jumphost_nsg.id
 }
 
-resource "azurerm_windows_virtual_machine" "winvm" {
-  count                 = var.win_vm_deploy
+resource "azurerm_virtual_machine" "jumphost" {
   name                  = "jumphost"
   location              = azurerm_resource_group.aml_rg.location
   resource_group_name   = azurerm_resource_group.aml_rg.name
   network_interface_ids = [azurerm_network_interface.jumphost_nic.id]
-  size               = "Standard_DS3_v2"
-  admin_username        = var.jumphost_username
-  admin_password        = var.jumphost_password
+  vm_size               = "Standard_DS3_v2"
 
-  source_image_reference {
+  delete_os_disk_on_termination    = true
+  delete_data_disks_on_termination = true
+
+  storage_image_reference {
     publisher = "microsoft-dsvm"
     offer     = "dsvm-win-2019"
     sku       = "server-2019"
     version   = "latest"
   }
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
+  os_profile {
+    computer_name  = "jumphost"
+    admin_username = var.jumphost_username
+    admin_password = var.jumphost_password
+  }
+
+  os_profile_windows_config {
+    provision_vm_agent        = true
+    enable_automatic_upgrades = true
   }
 
   identity {
     type = "SystemAssigned"
   }
+
+  storage_os_disk {
+    name              = "jumphost-osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "StandardSSD_LRS"
+  }
 }
 
 resource "azurerm_dev_test_global_vm_shutdown_schedule" "jumphost_schedule" {
-  virtual_machine_id = azurerm_windows_virtual_machine.winvm[0].id
+  virtual_machine_id = azurerm_virtual_machine.jumphost.id
   location           = azurerm_resource_group.aml_rg.location
   enabled            = true
 
@@ -90,26 +91,5 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "jumphost_schedule" {
 
   notification_settings {
     enabled = false
-  }
-}
-
-data "external" "os" {
-  working_dir = path.module
-  program     = ["printf", "{\"os\": \"Linux\"}"]
-}
-
-resource "null_resource" "create_rdp_file" {
-  count = var.win_vm_deploy == 0 ? 0 : local.win_check
-  provisioner "local-exec" {
-    command = "Powershell -file ${path.module}/scripts/New-RdpFile.ps1 -Path ${path.module} -FullAddress ${local.win_ip_address} -Username ${var.jumphost_username} -Password ${var.jumphost_password} -DesktopWidth ${var.rdp_windows_width} -DesktopHeight ${var.rdp_windows_height}"
-  }
-
-}
-
-resource "null_resource" "destroy_rdp_file" {
-  count = var.win_vm_deploy == 0 ? 0 : local.win_check
-  provisioner "local-exec" {
-    when    = destroy
-    command = "del win_vm.rdp"
   }
 }
