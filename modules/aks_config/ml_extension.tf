@@ -83,6 +83,7 @@ resource "azurerm_kubernetes_cluster_extension" "machine_learning" {
     enableTraining                                          = true
     enableInference                                         = true
     inferenceRouterServiceType                              = "loadBalancer"
+    inferenceRouterHA                                       = false
     allowInsecureConnections                                = true
     "scoringFe.serviceType.internalLoadBalancer"            = true
     privateEndpointILB                                      = true
