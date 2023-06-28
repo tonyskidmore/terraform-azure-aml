@@ -6,16 +6,17 @@
 # Azure Kubernetes Service (not deployed per default)
 
 resource "azurerm_kubernetes_cluster" "aml_aks" {
-  count               = var.deploy_aks ? 1 : 0
+  # count               = var.deploy_aks ? 1 : 0
   name                = "${var.prefix}-aks-${random_string.postfix.result}"
   location            = azurerm_resource_group.aml_rg.location
   resource_group_name = azurerm_resource_group.aml_rg.name
   dns_prefix          = "aks"
+  node_resource_group = "${azurerm_resource_group.aml_rg.name}-aks"
   # private_cluster_enabled = true
 
   default_node_pool {
     name           = "default"
-    node_count     = 1
+    node_count     = 3
     vm_size        = "Standard_DS2_v2" # "Standard_B2ms" 
     vnet_subnet_id = azurerm_subnet.aks_subnet.id
   }
@@ -37,4 +38,10 @@ resource "azurerm_kubernetes_cluster" "aml_aks" {
   # }
 
   # depends_on = [azurerm_machine_learning_workspace.aml_ws]
+}
+
+resource "azurerm_role_assignment" "akstomanagevnet" {
+ scope = azurerm_virtual_network.aml_vnet.id
+ role_definition_name = "Network Contributor"
+ principal_id = azurerm_kubernetes_cluster.aml_aks.identity[0].principal_id
 }

@@ -29,6 +29,32 @@ resource "azurerm_machine_learning_datastore_blobstorage" "aml_train_data" {
   storage_container_id = azurerm_storage_container.model_training_data.resource_manager_id
   account_key          = azurerm_storage_account.aml_train_data.primary_access_key
 }
+# https://learn.microsoft.com/en-us/azure/templates/microsoft.machinelearningservices/workspaces/computes?pivots=deployment-language-terraform#Overview
+# resource "azapi_resource" "nopip_compute_instance" {
+#   name = "${random_string.ci_prefix.result}-instance"
+#   parent_id = azurerm_machine_learning_workspace.aml_ws.id
+#   type = "Microsoft.MachineLearningServices/workspaces/computes@2022-12-01-preview"
+
+#   location = "uksouth"
+#   body = jsonencode({
+#     properties = {
+#       computeType      = "ComputeInstance"
+#       disableLocalAuth = true
+#       properties = {
+#         enableNodePublicIp = false
+#         vmSize = "STANDARD_DS2_V2"
+#         subnet = {
+#           id = "${azurerm_subnet.snet-training.id}"
+#         }
+#       }
+#     }
+#   })
+#   depends_on = [
+#     azurerm_subnet.snet-training,
+#     azurerm_private_endpoint.mlw_ple,
+#     azurerm_subnet_network_security_group_association.nsg-training-link,
+#   ]
+# }
 
 # Create Compute Resources in AML
 
